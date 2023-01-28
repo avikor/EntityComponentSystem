@@ -174,15 +174,11 @@ namespace ecs
 
 		if (typeid(ComponentClass) == typeid(PhysicsComponent))
 		{
-			PooledComponent<PhysicsComponent> physComp = entitiesManager_.physicsComponentsPool_.request();
-			physComp->valid = true;
-			pooledEntityBody_->components_[firstEmpty] = std::move(physComp);
+			pooledEntityBody_->components_[firstEmpty] = entitiesManager_.physicsComponentsPool_.request();
 		}
 		else if (typeid(ComponentClass) == typeid(LifetimeComponent))
 		{
-			PooledComponent<LifetimeComponent> lifetimeComp = entitiesManager_.lifetimeComponentsPool_.request();
-			lifetimeComp->valid = true;
-			pooledEntityBody_->components_[firstEmpty] = std::move(lifetimeComp);
+			pooledEntityBody_->components_[firstEmpty] = entitiesManager_.lifetimeComponentsPool_.request();
 		}
 		else
 		{

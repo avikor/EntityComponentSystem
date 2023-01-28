@@ -96,16 +96,19 @@ namespace ecs
 
         ++size_;
 
-        return { new (&pool_[stack_[stackTop_ - 1U]]) Component{}, [this](Component* comp)
+        Component* compo{ new (&pool_[stack_[stackTop_ - 1U]]) Component{} };
+        compo->valid = true;
+
+        return { compo, [this](Component* compo)
             {
                 // NOTE: The pool's lifetime must exceed that of its objects, 
                 // otherwise it'll lead to undefined behavior
 
                 std::lock_guard lock{ mutex_ };
 
-                const std::size_t freedObjIdx{ static_cast<std::size_t>(comp - poolStart_) };
+                const std::size_t freedObjIdx{ static_cast<std::size_t>(compo - poolStart_) };
 
-                comp->valid = false;
+                compo->valid = false;
 
                 --stackTop_;
                 stack_[stackTop_] = freedObjIdx;
