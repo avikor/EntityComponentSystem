@@ -83,7 +83,7 @@ namespace ecs
 		std::lock_guard lock{ mu_ };
 
 		Entity ent{ *this };
-		ent.pooledEntityBody_->id = EntitiesManager<CAPACITY>::nextId_s++;
+		ent.pooledEntityBody_->id_ = EntitiesManager<CAPACITY>::nextId_s++;
 		return ent;
 	}
 
@@ -97,7 +97,7 @@ namespace ecs
 	template <std::size_t CAPACITY>
 	EntityId EntitiesManager<CAPACITY>::Entity::getId() const noexcept
 	{
-		return pooledEntityBody_->id;
+		return pooledEntityBody_->id_;
 	}
 
 	template <std::size_t CAPACITY>
@@ -110,7 +110,7 @@ namespace ecs
 	template <ComponentClassConcept ComponentClass>
 	constexpr bool EntitiesManager<CAPACITY>::Entity::hasComponent() const noexcept
 	{
-		for (const PooledComponentVariant& component : pooledEntityBody_->components)
+		for (const PooledComponentVariant& component : pooledEntityBody_->components_)
 		{
 			if (std::holds_alternative<PooledComponent<ComponentClass>>(component))
 			{
@@ -131,18 +131,18 @@ namespace ecs
 		std::size_t firstEmpty{ componentClassesCount };
 		for (std::size_t i{ 0U }; i != componentClassesCount; ++i)
 		{
-			if (std::holds_alternative<PooledComponent<ComponentClass>>(pooledEntityBody_->components[i]))
+			if (std::holds_alternative<PooledComponent<ComponentClass>>(pooledEntityBody_->components_[i]))
 			{
-				return pooledEntityBody_->components[i];
+				return pooledEntityBody_->components_[i];
 			}
 			else if (firstEmpty == componentClassesCount &&
-				std::holds_alternative<std::monostate>(pooledEntityBody_->components[i]))
+				std::holds_alternative<std::monostate>(pooledEntityBody_->components_[i]))
 			{
 				firstEmpty = i;
 			}
 		}
 
-		return pooledEntityBody_->components[firstEmpty];
+		return pooledEntityBody_->components_[firstEmpty];
 	}
 
 	template <std::size_t CAPACITY>
@@ -152,12 +152,12 @@ namespace ecs
 		std::size_t firstEmpty{ componentClassesCount };
 		for (std::size_t i{ 0U }; i != componentClassesCount; ++i)
 		{
-			if (std::holds_alternative<PooledComponent<ComponentClass>>(pooledEntityBody_->components[i]))
+			if (std::holds_alternative<PooledComponent<ComponentClass>>(pooledEntityBody_->components_[i]))
 			{
 				return false;
 			}
 			else if (firstEmpty == componentClassesCount &&
-				std::holds_alternative<std::monostate>(pooledEntityBody_->components[i]))
+				std::holds_alternative<std::monostate>(pooledEntityBody_->components_[i]))
 			{
 				firstEmpty = i;
 			}
@@ -165,7 +165,7 @@ namespace ecs
 
 		// if we've reached here than firstEmpty != componentClassesCount.
 		// proof by negation: assume firstEmpty == componentClassesCount then
-		// none of pooledEntityBody_->components is std::monostate, hence some variant 
+		// none of pooledEntityBody_->components_ is std::monostate, hence some variant 
 		// is already the component the client wished to add, so we've returned false
 
 		// notice ComponentClass is never polymorphic, therefore "typeid(ComponentClass)" 
@@ -176,13 +176,13 @@ namespace ecs
 		{
 			PooledComponent<PhysicsComponent> physComp = entitiesManager_.physicsComponentsPool_.request();
 			physComp->valid = true;
-			pooledEntityBody_->components[firstEmpty] = std::move(physComp);
+			pooledEntityBody_->components_[firstEmpty] = std::move(physComp);
 		}
 		else if (typeid(ComponentClass) == typeid(LifetimeComponent))
 		{
 			PooledComponent<LifetimeComponent> lifetimeComp = entitiesManager_.lifetimeComponentsPool_.request();
 			lifetimeComp->valid = true;
-			pooledEntityBody_->components[firstEmpty] = std::move(lifetimeComp);
+			pooledEntityBody_->components_[firstEmpty] = std::move(lifetimeComp);
 		}
 		else
 		{
@@ -197,7 +197,7 @@ namespace ecs
 	constexpr bool EntitiesManager<CAPACITY>::Entity::removeComponent() noexcept
 	{
 		bool res{ false };
-		for (PooledComponentVariant& component : pooledEntityBody_->components)
+		for (PooledComponentVariant& component : pooledEntityBody_->components_)
 		{
 			if (std::holds_alternative<PooledComponent<ComponentClass>>(component))
 			{
@@ -213,8 +213,8 @@ namespace ecs
 	template <Group group>
 	constexpr bool EntitiesManager<CAPACITY>::Entity::isMemberOf() const noexcept
 	{
-		const auto grpsEnd{ std::cend(pooledEntityBody_->groups) };
-		return std::find(std::cbegin(pooledEntityBody_->groups), grpsEnd, group) != grpsEnd;
+		const auto grpsEnd{ std::cend(pooledEntityBody_->groups_) };
+		return std::find(std::cbegin(pooledEntityBody_->groups_), grpsEnd, group) != grpsEnd;
 	}
 
 	template <std::size_t CAPACITY>
@@ -224,18 +224,18 @@ namespace ecs
 		std::size_t firstEmpty{ groupsCount };
 		for (std::size_t i{ 0U }; i != groupsCount; ++i)
 		{
-			if (pooledEntityBody_->groups[i] == group)
+			if (pooledEntityBody_->groups_[i] == group)
 			{
 				return false;
 			}
 			else if (firstEmpty == groupsCount &&
-				pooledEntityBody_->groups[i] == Group::emptyVal)
+				pooledEntityBody_->groups_[i] == Group::emptyVal)
 			{
 				firstEmpty = i;
 			}
 		}
 
-		pooledEntityBody_->groups[firstEmpty] = group;
+		pooledEntityBody_->groups_[firstEmpty] = group;
 		return true;
 	}
 
@@ -243,8 +243,8 @@ namespace ecs
 	template <Group group>
 	constexpr bool EntitiesManager<CAPACITY>::Entity::dismissFromGroup() noexcept
 	{
-		const auto it{ std::ranges::find(pooledEntityBody_->groups, group) };
-		if (it != std::end(pooledEntityBody_->groups))
+		const auto it{ std::ranges::find(pooledEntityBody_->groups_, group) };
+		if (it != std::end(pooledEntityBody_->groups_))
 		{
 			*it = Group::emptyVal;
 			return true;

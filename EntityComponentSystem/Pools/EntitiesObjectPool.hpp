@@ -3,10 +3,6 @@
 
 #include "ComponentObjectPool.hpp"
 
-#include <array>
-#include <memory>
-#include <functional>
-#include <mutex>
 #include <variant>
 
 
@@ -38,12 +34,11 @@ namespace ecs
 
     static constexpr std::uint32_t groupsCount{ static_cast<std::underlying_type_t<Group>>(Group::count) - 1U };
 
-    // better hide it as private and use friends somewhere
     struct EntityBody
     {
-        EntityId id{ 0U };
-        std::array<PooledComponentVariant, componentClassesCount> components{};
-        std::array<Group, groupsCount> groups{};
+        EntityId id_{ 0U };
+        std::array<PooledComponentVariant, componentClassesCount> components_{};
+        std::array<Group, groupsCount> groups_{};
     };
 
 
@@ -117,20 +112,20 @@ namespace ecs
 
         ++size_;
 
-        return { new (&pool_[stack_[stackTop_ - 1U]]) EntityBody{}, [this](EntityBody* ent)
+        return { new (&pool_[stack_[stackTop_ - 1U]]) EntityBody{}, [this](EntityBody* entBody)
             {
                 // NOTE: The pool's lifetime must exceed that of its objects, 
                 // otherwise it'll lead to undefined behavior
 
                 std::lock_guard lock{ mutex_ };
 
-                const std::size_t freedObjIdx{ static_cast<std::size_t>(ent - poolStart_) };
+                const std::size_t freedObjIdx{ static_cast<std::size_t>(entBody - poolStart_) };
 
-                for (PooledComponentVariant& component : ent->components)
+                for (PooledComponentVariant& component : entBody->components_)
                 {
                     component = std::move(std::monostate{});
                 }
-                ent->~EntityBody();
+                entBody->~EntityBody();
 
                 --stackTop_;
                 stack_[stackTop_] = freedObjIdx;

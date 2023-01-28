@@ -10,8 +10,8 @@ namespace ecs
 	{
 		for (EntityBody& entity : entitiesManager.entitiesPool_)
 		{
-			const auto grpsEnd{ std::cend(entity.groups) };
-			if (std::find(std::cbegin(entity.groups), grpsEnd, Group::dummy_group) != grpsEnd)
+			const auto grpsEnd{ std::cend(entity.groups_) };
+			if (std::find(std::cbegin(entity.groups_), grpsEnd, Group::dummy_group) != grpsEnd)
 			{
 				// do somthing
 			}
