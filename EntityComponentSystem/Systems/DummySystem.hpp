@@ -8,10 +8,10 @@ namespace ecs
 	template <std::size_t CAPACITY>
 	constexpr void dummy_system(EntitiesManager<CAPACITY>& entitiesManager)
 	{
-		for (EntityBody& entity : entitiesManager.entitiesPool_)
+		for (EntityBody<CAPACITY>& entBody : entitiesManager.entitiesPool_)
 		{
-			const auto grpsEnd{ std::cend(entity.groups_) };
-			if (std::find(std::cbegin(entity.groups_), grpsEnd, Group::dummy_group) != grpsEnd)
+			const auto grpsEnd{ std::cend(entBody.groups_) };
+			if (std::find(std::cbegin(entBody.groups_), grpsEnd, Group::dummy_group) != grpsEnd)
 			{
 				// do somthing
 			}

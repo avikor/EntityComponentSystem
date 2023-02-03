@@ -7,7 +7,7 @@
 
 #include <future>
 
-
+template<std::size_t CAPACITY>
 struct PhysicsVisitor
 {
 	void operator()(std::monostate empty) const
@@ -15,7 +15,7 @@ struct PhysicsVisitor
 		REQUIRE(false); // never meant to reach here
 	}
 
-	void operator()(ecs::PooledComponent<ecs::PhysicsComponent>& physComp) const
+	void operator()(ecs::PooledComponent<ecs::PhysicsComponent, CAPACITY>& physComp) const
 	{
 		physComp->xPos = 5.34f;
 		physComp->yPos = 1.4f;
@@ -23,7 +23,7 @@ struct PhysicsVisitor
 		physComp->yVelocity = 0.5f;
 	}
 
-	void operator()(ecs::PooledComponent<ecs::LifetimeComponent>& lifetimeComp) const
+	void operator()(ecs::PooledComponent<ecs::LifetimeComponent, CAPACITY>& lifetimeComp) const
 	{
 		REQUIRE(false); // never meant to reach here
 	}
@@ -73,10 +73,10 @@ TEST_CASE("Entity::components")
 	REQUIRE_FALSE(ent1.hasComponent<ecs::PhysicsComponent>());
 	REQUIRE_FALSE(ent1.hasComponent<ecs::LifetimeComponent>());
 
-	ecs::PooledComponentVariant& wantedPhysCompoVar = ent1.getComponent<ecs::PhysicsComponent>();
+	ecs::PooledVariant<2U>& wantedPhysCompoVar = ent1.getComponent<ecs::PhysicsComponent>();
 	REQUIRE(std::holds_alternative<std::monostate>(wantedPhysCompoVar));
 	
-	ecs::PooledComponentVariant& wantedLifetimeCompoVar = ent1.getComponent<ecs::LifetimeComponent>();
+	ecs::PooledVariant<2U>& wantedLifetimeCompoVar = ent1.getComponent<ecs::LifetimeComponent>();
 	REQUIRE(std::holds_alternative<std::monostate>(wantedLifetimeCompoVar));
 
 	REQUIRE_FALSE(ent1.removeComponent<ecs::PhysicsComponent>());
@@ -87,11 +87,11 @@ TEST_CASE("Entity::components")
 
 	REQUIRE(ent1.hasComponent<ecs::PhysicsComponent>());
 
-	ecs::PooledComponentVariant& physCompoVar = ent1.getComponent<ecs::PhysicsComponent>();
+	ecs::PooledVariant<2U>& physCompoVar = ent1.getComponent<ecs::PhysicsComponent>();
 	
-	REQUIRE(std::holds_alternative<ecs::PooledComponent<ecs::PhysicsComponent>>(physCompoVar));
+	REQUIRE(std::holds_alternative<ecs::PooledComponent<ecs::PhysicsComponent, 2U>>(physCompoVar));
 
-	auto& physCompo = std::get<ecs::PooledComponent<ecs::PhysicsComponent>>(physCompoVar);
+	auto& physCompo = std::get<ecs::PooledComponent<ecs::PhysicsComponent, 2U>>(physCompoVar);
 
 	REQUIRE(physCompo->valid == true);
 	REQUIRE(physCompo->xPos == 0.0f);
@@ -102,7 +102,7 @@ TEST_CASE("Entity::components")
 	physCompo->xPos = 10.1f;
 	REQUIRE(physCompo->xPos == 10.1f);
 
-	std::visit(PhysicsVisitor{}, physCompoVar);
+	std::visit(PhysicsVisitor<2U>{}, physCompoVar);
 
 	REQUIRE(physCompo->valid == true);
 	REQUIRE(physCompo->xPos == 5.34f);
@@ -112,7 +112,7 @@ TEST_CASE("Entity::components")
 
 	REQUIRE(ent1.removeComponent<ecs::PhysicsComponent>());
 	REQUIRE_FALSE(ent1.hasComponent<ecs::PhysicsComponent>());
-	ecs::PooledComponentVariant& wantedPhysCompoVar2 = ent1.getComponent<ecs::PhysicsComponent>();
+	ecs::PooledVariant<2U>& wantedPhysCompoVar2 = ent1.getComponent<ecs::PhysicsComponent>();
 	REQUIRE(std::holds_alternative<std::monostate>(wantedPhysCompoVar2));
 }
 

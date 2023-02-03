@@ -5,8 +5,8 @@ add_subdirectory("Pools")
 
 add_executable (EntityComponentSystem	"ComponentClasses/PhysicsComponent.hpp"										
 										"ComponentClasses/LifetimeComponent.hpp"
-										"Pools/ComponentObjectPool.hpp"
-										"Pools/EntitiesObjectPool.hpp"
+										"Pools/ComponentPool.hpp"
+										"Pools/EntitiesPool.hpp"
 										"Entities/EntitiesManager.hpp" 
 										"Systems/DecLifetimeSystem.hpp"
 										"Systems/MoveSystem.hpp"
