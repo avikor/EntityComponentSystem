@@ -39,15 +39,15 @@ namespace ecs
         // as it allows for the following undefined behavior - 
         // PooledComponent<PhysicsComponent, 5U> physCompo; physCompo->xPos = 6;
         // I've defined it only for EntityBody.components_ which require a default ctor
-        constexpr ComponentDeleter()
+        ComponentDeleter()
             : compoPool_{ nullptr }
         { }
 
-        constexpr ComponentDeleter(ComponentPool<Component, CAPACITY>& compoPool)
+        ComponentDeleter(ComponentPool<Component, CAPACITY>& compoPool)
             : compoPool_{ &compoPool }
         { }
 
-        constexpr void operator()(Component* compo) const
+        void operator()(Component* compo) const
         {
             // NOTE: The pool's lifetime must exceed that of its objects, 
             // otherwise it'll lead to undefined behavior
@@ -78,19 +78,19 @@ namespace ecs
     class ComponentPool
     {
     public:
-        constexpr ComponentPool() noexcept;
+        ComponentPool() noexcept;
 
-        [[nodiscard]] constexpr PooledComponent<Component, CAPACITY> request() noexcept(false);
+        [[nodiscard]] PooledComponent<Component, CAPACITY> request() noexcept(false);
 
         [[nodiscard]] consteval std::size_t capacity() const noexcept;
 
-        [[nodiscard]] constexpr std::size_t size() const noexcept;
+        [[nodiscard]] std::size_t size() const noexcept;
 
-        [[nodiscard]] constexpr bool isFull() const noexcept;
+        [[nodiscard]] bool isFull() const noexcept;
 
-        constexpr Component* begin() noexcept;
+        Component* begin() noexcept;
 
-        constexpr Component* end() noexcept;
+        Component* end() noexcept;
 
     private:
         friend class ComponentDeleter<Component, CAPACITY>;
@@ -100,21 +100,21 @@ namespace ecs
         std::array<std::size_t, CAPACITY> stack_;
         std::size_t stackTop_;
         std::size_t size_;
-        //std::mutex mutex_;
+        std::mutex mutex_;
         ComponentDeleter<Component, CAPACITY> compoDeleter_;
 
-        constexpr void release(Component* compo) noexcept;
+        void release(Component* compo) noexcept;
     };
 
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr ComponentPool<Component, CAPACITY>::ComponentPool() noexcept
+    ComponentPool<Component, CAPACITY>::ComponentPool() noexcept
         : pool_{}
         , poolStart_{ reinterpret_cast<Component* const>(pool_.data()) }
         , stack_{}
         , stackTop_{ 0U }
         , size_{ 0U }
-        //, mutex_{}
+        , mutex_{}
         , compoDeleter_{ *this }
     {
         for (std::size_t i{ 0U }; i != CAPACITY; ++i)
@@ -124,9 +124,9 @@ namespace ecs
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr PooledComponent<Component, CAPACITY> ComponentPool<Component, CAPACITY>::request() noexcept(false)
+    PooledComponent<Component, CAPACITY> ComponentPool<Component, CAPACITY>::request() noexcept(false)
     {
-        //std::lock_guard lock{ mutex_ };
+        std::lock_guard lock{ mutex_ };
 
         if (stackTop_ == CAPACITY) [[unlikely]]
         {
@@ -144,9 +144,9 @@ namespace ecs
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr void ComponentPool<Component, CAPACITY>::release(Component* compo) noexcept
+    void ComponentPool<Component, CAPACITY>::release(Component* compo) noexcept
     {
-        //std::lock_guard lock{ mutex_ };
+        std::lock_guard lock{ mutex_ };
 
         compo->valid = false;
 
@@ -165,25 +165,25 @@ namespace ecs
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr std::size_t ComponentPool<Component, CAPACITY>::size() const noexcept
+    std::size_t ComponentPool<Component, CAPACITY>::size() const noexcept
     {
         return size_;
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr bool ComponentPool<Component, CAPACITY>::isFull() const noexcept
+    bool ComponentPool<Component, CAPACITY>::isFull() const noexcept
     {
         return size_ == CAPACITY;
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr Component* ComponentPool<Component, CAPACITY>::begin() noexcept
+    Component* ComponentPool<Component, CAPACITY>::begin() noexcept
     {
         return poolStart_;
     }
 
     template <ComponentConcept Component, std::size_t CAPACITY>
-    constexpr Component* ComponentPool<Component, CAPACITY>::end() noexcept
+    Component* ComponentPool<Component, CAPACITY>::end() noexcept
     {
         return poolStart_ + CAPACITY;
     }

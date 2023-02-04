@@ -6,7 +6,7 @@
 namespace ecs
 {
 	template <std::size_t CAPACITY>
-	constexpr void move_system(EntitiesManager<CAPACITY>& entitiesManager)
+	void move_system(EntitiesManager<CAPACITY>& entitiesManager)
 	{
 		for (PhysicsComponent& physComp : entitiesManager.physicsComponentsPool_)
 		{

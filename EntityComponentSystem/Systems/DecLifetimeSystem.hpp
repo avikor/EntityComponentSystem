@@ -6,7 +6,7 @@
 namespace ecs
 {
 	template <std::size_t CAPACITY>
-	constexpr void decrease_lifetime_system(EntitiesManager<CAPACITY>& entitiesManager)
+	void decrease_lifetime_system(EntitiesManager<CAPACITY>& entitiesManager)
 	{
 		for (LifetimeComponent& lifetimeComp : entitiesManager.lifetimeComponentsPool_)
 		{

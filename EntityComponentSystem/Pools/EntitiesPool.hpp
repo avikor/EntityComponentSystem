@@ -52,14 +52,15 @@ namespace ecs
     class EntityDeleter
     {
     public:
-        constexpr EntityDeleter(EntitiesPool<CAPACITY>& entitiesPool)
+        EntityDeleter(EntitiesPool<CAPACITY>& entitiesPool)
             : entitiesPool_{ entitiesPool }
         { }
 
-        constexpr void operator()(EntityBody<CAPACITY>* entBody) const
+        void operator()(EntityBody<CAPACITY>* entBody) const
         {
             // NOTE: The pool's lifetime must exceed that of its objects, 
             // otherwise it'll lead to undefined behavior
+
             entitiesPool_.release(entBody);
         }
 
@@ -86,19 +87,19 @@ namespace ecs
     class EntitiesPool
     {
     public:
-        constexpr EntitiesPool() noexcept;
+        EntitiesPool() noexcept;
 
-        [[nodiscard]] constexpr PooledEntityBody<CAPACITY> request() noexcept(false);
+        [[nodiscard]] PooledEntityBody<CAPACITY> request() noexcept(false);
 
         [[nodiscard]] consteval std::size_t capacity() const noexcept;
 
-        [[nodiscard]] constexpr std::size_t size() const noexcept;
+        [[nodiscard]] std::size_t size() const noexcept;
 
-        [[nodiscard]] constexpr bool isFull() const noexcept;
+        [[nodiscard]] bool isFull() const noexcept;
 
-        constexpr EntityBody<CAPACITY>* begin() noexcept;
+        EntityBody<CAPACITY>* begin() noexcept;
 
-        constexpr EntityBody<CAPACITY>* end() noexcept;
+        EntityBody<CAPACITY>* end() noexcept;
 
     private:
         friend class EntityDeleter<CAPACITY>;
@@ -111,12 +112,12 @@ namespace ecs
         std::mutex mutex_;
         const EntityDeleter<CAPACITY> entDeleter_;
 
-        constexpr void release(EntityBody<CAPACITY>* entBody) noexcept;
+        void release(EntityBody<CAPACITY>* entBody) noexcept;
     };
 
 
     template <std::size_t CAPACITY>
-    constexpr EntitiesPool<CAPACITY>::EntitiesPool() noexcept
+    EntitiesPool<CAPACITY>::EntitiesPool() noexcept
         : pool_{}
         , poolStart_{ pool_.data() }
         , stack_{}
@@ -132,7 +133,7 @@ namespace ecs
     }
 
     template <std::size_t CAPACITY>
-    constexpr PooledEntityBody<CAPACITY> EntitiesPool<CAPACITY>::request() noexcept(false)
+    PooledEntityBody<CAPACITY> EntitiesPool<CAPACITY>::request() noexcept(false)
     {
         std::lock_guard lock{ mutex_ };
 
@@ -149,7 +150,7 @@ namespace ecs
     }
 
     template <std::size_t CAPACITY>
-    constexpr void EntitiesPool<CAPACITY>::release(EntityBody<CAPACITY>* entBody) noexcept
+    void EntitiesPool<CAPACITY>::release(EntityBody<CAPACITY>* entBody) noexcept
     {
         std::lock_guard lock{ mutex_ };
 
@@ -159,7 +160,6 @@ namespace ecs
         {
             component = std::move(std::monostate{});
         }
-        entBody->~EntityBody();
 
         --stackTop_;
         stack_[stackTop_] = freedObjIdx;
@@ -174,25 +174,25 @@ namespace ecs
     }
 
     template <std::size_t CAPACITY>
-    constexpr std::size_t EntitiesPool<CAPACITY>::size() const noexcept
+    std::size_t EntitiesPool<CAPACITY>::size() const noexcept
     {
         return size_;
     }
 
     template <std::size_t CAPACITY>
-    constexpr bool EntitiesPool<CAPACITY>::isFull() const noexcept
+    bool EntitiesPool<CAPACITY>::isFull() const noexcept
     {
         return size_ == CAPACITY;
     }
 
     template <std::size_t CAPACITY>
-    constexpr EntityBody<CAPACITY>* EntitiesPool<CAPACITY>::begin() noexcept
+    EntityBody<CAPACITY>* EntitiesPool<CAPACITY>::begin() noexcept
     {
         return poolStart_;
     }
 
     template <std::size_t CAPACITY>
-    constexpr EntityBody<CAPACITY>* EntitiesPool<CAPACITY>::end() noexcept
+    EntityBody<CAPACITY>* EntitiesPool<CAPACITY>::end() noexcept
     {
         return poolStart_ + CAPACITY;
     }

@@ -15,35 +15,35 @@ namespace ecs
 	public:
 		class Entity;
 
-		[[nodiscard]] constexpr Entity requestEntity() noexcept(false);
+		[[nodiscard]] Entity requestEntity() noexcept(false);
 
-		[[nodiscard]] constexpr bool isFull() const noexcept;
+		[[nodiscard]] bool isFull() const noexcept;
 
 		class Entity
 		{
 		public:
-			[[nodiscard]] constexpr EntityId getId() const noexcept;
+			[[nodiscard]] EntityId getId() const noexcept;
 
 			template <ComponentConcept Component>
-			[[nodiscard]] constexpr bool hasComponent() const noexcept;
+			[[nodiscard]] bool hasComponent() const noexcept;
 
 			template <ComponentConcept Component>
-			[[nodiscard]] constexpr PooledVariant<CAPACITY>& getComponent() noexcept;
+			[[nodiscard]] PooledVariant<CAPACITY>& getComponent() noexcept;
 
 			template <ComponentConcept Component>
-			[[nodiscard]] constexpr bool addComponent() noexcept;
+			[[nodiscard]] bool addComponent() noexcept;
 
 			template <ComponentConcept Component>
-			[[nodiscard]] constexpr bool removeComponent() noexcept;
+			[[nodiscard]] bool removeComponent() noexcept;
 
 			template <Group group>
-			[[nodiscard]] constexpr bool isMemberOf() const noexcept;
+			[[nodiscard]] bool isMemberOf() const noexcept;
 
 			template <Group group>
-			[[nodiscard]] constexpr bool enrollToGroup() noexcept;
+			[[nodiscard]] bool enrollToGroup() noexcept;
 
 			template <Group group>
-			[[nodiscard]] constexpr bool dismissFromGroup() noexcept;
+			[[nodiscard]] bool dismissFromGroup() noexcept;
 
 
 		private:
@@ -58,9 +58,9 @@ namespace ecs
 
 	private:
 		// systems
-		friend constexpr void move_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
-		friend constexpr void decrease_lifetime_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
-		friend constexpr void dummy_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
+		friend void move_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
+		friend void decrease_lifetime_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
+		friend void dummy_system<CAPACITY>(EntitiesManager<CAPACITY>& entitiesManager);
 
 		static EntityId nextId_s;
 
@@ -80,7 +80,7 @@ namespace ecs
 	EntityId EntitiesManager<CAPACITY>::nextId_s{ 0U };
 
 	template <std::size_t CAPACITY>
-	constexpr EntitiesManager<CAPACITY>::Entity EntitiesManager<CAPACITY>::requestEntity() noexcept(false)
+	EntitiesManager<CAPACITY>::Entity EntitiesManager<CAPACITY>::requestEntity() noexcept(false)
 	{
 		std::lock_guard lock{ mu_ };
 
@@ -90,14 +90,14 @@ namespace ecs
 	}
 
 	template <std::size_t CAPACITY>
-	constexpr bool EntitiesManager<CAPACITY>::isFull() const noexcept
+	bool EntitiesManager<CAPACITY>::isFull() const noexcept
 	{
 		return entitiesPool_.isFull();
 	}
 
 	//////// Entity definitions //////// 
 	template <std::size_t CAPACITY>
-	constexpr EntityId EntitiesManager<CAPACITY>::Entity::getId() const noexcept
+	EntityId EntitiesManager<CAPACITY>::Entity::getId() const noexcept
 	{
 		return pooledEntity_->id_;
 	}
@@ -110,7 +110,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <ComponentConcept Component>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::hasComponent() const noexcept
+	bool EntitiesManager<CAPACITY>::Entity::hasComponent() const noexcept
 	{
 		for (const PooledVariant<CAPACITY>& component : pooledEntity_->components_)
 		{
@@ -125,7 +125,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <ComponentConcept Component>
-	constexpr PooledVariant<CAPACITY>& EntitiesManager<CAPACITY>::Entity::getComponent() noexcept
+	PooledVariant<CAPACITY>& EntitiesManager<CAPACITY>::Entity::getComponent() noexcept
 	{
 		// notice that due to EntityBody's definition if the wanted component isn't contained,
 		// then its alternative is a std::monostate
@@ -149,7 +149,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <ComponentConcept Component>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::addComponent() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::addComponent() noexcept
 	{
 		std::size_t firstEmpty{ componentClassesCount<CAPACITY> };
 		for (std::size_t i{ 0U }; i != componentClassesCount<CAPACITY>; ++i)
@@ -192,7 +192,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <ComponentConcept Component>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::removeComponent() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::removeComponent() noexcept
 	{
 		bool res{ false };
 		for (PooledVariant<CAPACITY>& component : pooledEntity_->components_)
@@ -209,7 +209,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <Group group>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::isMemberOf() const noexcept
+	bool EntitiesManager<CAPACITY>::Entity::isMemberOf() const noexcept
 	{
 		const auto grpsEnd{ std::cend(pooledEntity_->groups_) };
 		return std::find(std::cbegin(pooledEntity_->groups_), grpsEnd, group) != grpsEnd;
@@ -217,7 +217,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <Group group>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::enrollToGroup() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::enrollToGroup() noexcept
 	{
 		std::size_t firstEmpty{ groupsCount };
 		for (std::size_t i{ 0U }; i != groupsCount; ++i)
@@ -239,7 +239,7 @@ namespace ecs
 
 	template <std::size_t CAPACITY>
 	template <Group group>
-	constexpr bool EntitiesManager<CAPACITY>::Entity::dismissFromGroup() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::dismissFromGroup() noexcept
 	{
 		const auto it{ std::ranges::find(pooledEntity_->groups_, group) };
 		if (it != std::end(pooledEntity_->groups_))

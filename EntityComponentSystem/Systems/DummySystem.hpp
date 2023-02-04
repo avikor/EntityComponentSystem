@@ -6,7 +6,7 @@
 namespace ecs
 {
 	template <std::size_t CAPACITY>
-	constexpr void dummy_system(EntitiesManager<CAPACITY>& entitiesManager)
+	void dummy_system(EntitiesManager<CAPACITY>& entitiesManager)
 	{
 		for (EntityBody<CAPACITY>& entBody : entitiesManager.entitiesPool_)
 		{
