@@ -35,15 +35,6 @@ namespace ecs
     class ComponentDeleter
     {
     public:
-        // NOTE: ComponentDeleter's default ctor should generally never be used
-        // as it allows for the following undefined behavior - 
-        // ComponentDeleter<PhysicsComponent, 2> compoDeleter{}; PhysicsComponent physCompo{}; 
-        // compoDeleter(&physCompo);
-        // I've defined it since the std::variant which holds a pooled component needs it
-        /*ComponentDeleter()
-            : compoPool_{ nullptr }
-        { }*/
-
         ComponentDeleter(ComponentPool<Component, CAPACITY>& compoPool)
             : compoPool_{ &compoPool }
         { }
