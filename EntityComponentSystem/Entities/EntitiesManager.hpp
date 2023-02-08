@@ -36,14 +36,11 @@ namespace ecs
 			template <ComponentConcept Component>
 			[[nodiscard]] bool removeComponent() noexcept;
 
-			template <Group group>
-			[[nodiscard]] bool isMemberOf() const noexcept;
+			[[nodiscard]] bool isMemberOf(Group group) const noexcept;
 
-			template <Group group>
-			[[nodiscard]] bool enrollToGroup() noexcept;
+			[[nodiscard]] bool enrollToGroup(Group group) noexcept;
 
-			template <Group group>
-			[[nodiscard]] bool dismissFromGroup() noexcept;
+			[[nodiscard]] bool dismissFromGroup(Group group) noexcept;
 
 
 		private:
@@ -208,16 +205,14 @@ namespace ecs
 	}
 
 	template <std::size_t CAPACITY>
-	template <Group group>
-	bool EntitiesManager<CAPACITY>::Entity::isMemberOf() const noexcept
+	bool EntitiesManager<CAPACITY>::Entity::isMemberOf(Group group) const noexcept
 	{
 		const auto grpsEnd{ std::cend(pooledEntity_->groups_) };
 		return std::find(std::cbegin(pooledEntity_->groups_), grpsEnd, group) != grpsEnd;
 	}
 
 	template <std::size_t CAPACITY>
-	template <Group group>
-	bool EntitiesManager<CAPACITY>::Entity::enrollToGroup() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::enrollToGroup(Group group) noexcept
 	{
 		std::size_t firstEmpty{ groupsCount };
 		for (std::size_t i{ 0U }; i != groupsCount; ++i)
@@ -238,8 +233,7 @@ namespace ecs
 	}
 
 	template <std::size_t CAPACITY>
-	template <Group group>
-	bool EntitiesManager<CAPACITY>::Entity::dismissFromGroup() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::dismissFromGroup(Group group) noexcept
 	{
 		const auto it{ std::ranges::find(pooledEntity_->groups_, group) };
 		if (it != std::end(pooledEntity_->groups_))

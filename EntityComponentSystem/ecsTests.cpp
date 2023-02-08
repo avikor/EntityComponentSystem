@@ -123,24 +123,24 @@ TEST_CASE("Entity::groups")
 
 	ecs::EntitiesManager<2U>::Entity ent1 = entitiesManager.requestEntity();
 
-	REQUIRE_FALSE(ent1.isMemberOf<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.isMemberOf<ecs::Group::organisms>());
+	REQUIRE_FALSE(ent1.isMemberOf(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.isMemberOf(ecs::Group::organisms));
 
-	REQUIRE_FALSE(ent1.dismissFromGroup<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.dismissFromGroup<ecs::Group::organisms>());
+	REQUIRE_FALSE(ent1.dismissFromGroup(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.dismissFromGroup(ecs::Group::organisms));
 
-	REQUIRE(ent1.enrollToGroup<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.enrollToGroup<ecs::Group::movers>());
+	REQUIRE(ent1.enrollToGroup(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.enrollToGroup(ecs::Group::movers));
 
-	REQUIRE(ent1.isMemberOf<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.isMemberOf<ecs::Group::organisms>());
+	REQUIRE(ent1.isMemberOf(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.isMemberOf(ecs::Group::organisms));
 
-	REQUIRE(ent1.dismissFromGroup<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.isMemberOf<ecs::Group::movers>());
-	REQUIRE_FALSE(ent1.dismissFromGroup<ecs::Group::movers>());
+	REQUIRE(ent1.dismissFromGroup(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.isMemberOf(ecs::Group::movers));
+	REQUIRE_FALSE(ent1.dismissFromGroup(ecs::Group::movers));
 
-	REQUIRE(ent1.enrollToGroup<ecs::Group::movers>());
-	REQUIRE(ent1.enrollToGroup<ecs::Group::organisms>());
+	REQUIRE(ent1.enrollToGroup(ecs::Group::movers));
+	REQUIRE(ent1.enrollToGroup(ecs::Group::organisms));
 }
 
 TEST_CASE("systems")
@@ -171,8 +171,8 @@ TEST_CASE("systems")
 	REQUIRE(ent8.addComponent<ecs::PhysicsComponent>());
 	REQUIRE(ent8.addComponent<ecs::LifetimeComponent>());
 	
-	REQUIRE(ent7.enrollToGroup<ecs::Group::dummy_group>());
-	REQUIRE(ent8.enrollToGroup<ecs::Group::dummy_group>());
+	REQUIRE(ent7.enrollToGroup(ecs::Group::dummy_group));
+	REQUIRE(ent8.enrollToGroup(ecs::Group::dummy_group));
 
 	std::future<void> fuMove = std::async(std::launch::async, ecs::move_system<8U>, std::ref(entitiesManager));
 	std::future<void> fuDec = std::async(std::launch::async, ecs::decrease_lifetime_system<8U>, std::ref(entitiesManager));
