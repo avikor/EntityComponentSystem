@@ -35,6 +35,10 @@ namespace ecs
     class ComponentDeleter
     {
     public:
+        ComponentDeleter()
+            : compoPool_{ nullptr }
+        { }
+
         ComponentDeleter(ComponentPool<Component, CAPACITY>& compoPool)
             : compoPool_{ &compoPool }
         { }

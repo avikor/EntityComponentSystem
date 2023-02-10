@@ -3,12 +3,17 @@
 
 #include "EntitiesPool.hpp"
 
-#include <typeinfo>
 #include <algorithm>
 
 
 namespace ecs
 {
+	enum class Component : std::uint16_t
+	{
+		physics,
+		lifetime
+	};
+
 	template <std::size_t CAPACITY>
 	class EntitiesManager
 	{
@@ -24,17 +29,15 @@ namespace ecs
 		public:
 			[[nodiscard]] EntityId getId() const noexcept;
 
-			template <ComponentConcept Component>
-			[[nodiscard]] bool hasComponent() const noexcept;
+			[[nodiscard]] bool hasComponent(Component compo) const noexcept;
 
-			template <ComponentConcept Component>
-			[[nodiscard]] PooledVariant<CAPACITY>& getComponent() noexcept;
+			[[nodiscard]] PooledComponent<PhysicsComponent, CAPACITY>& getPhysicsComponent() noexcept;
 
-			template <ComponentConcept Component>
-			[[nodiscard]] bool addComponent() noexcept;
+			[[nodiscard]] PooledComponent<LifetimeComponent, CAPACITY>& getLifetimeComponent() noexcept;
 
-			template <ComponentConcept Component>
-			[[nodiscard]] bool removeComponent() noexcept;
+			[[nodiscard]] bool addComponent(Component compo) noexcept;
+
+			[[nodiscard]] bool removeComponent(Component compo) noexcept;
 
 			[[nodiscard]] bool isMemberOf(Group group) const noexcept;
 
@@ -106,101 +109,68 @@ namespace ecs
 	{ }
 
 	template <std::size_t CAPACITY>
-	template <ComponentConcept Component>
-	bool EntitiesManager<CAPACITY>::Entity::hasComponent() const noexcept
-	{
-		for (const PooledVariant<CAPACITY>& component : pooledEntity_->components_)
-		{
-			if (std::holds_alternative<PooledComponent<Component, CAPACITY>>(component))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	template <std::size_t CAPACITY>
-	template <ComponentConcept Component>
-	PooledVariant<CAPACITY>& EntitiesManager<CAPACITY>::Entity::getComponent() noexcept
-	{
-		// notice that due to EntityBody's definition if the wanted component isn't contained,
-		// then its alternative is a std::monostate
-
-		std::size_t firstEmpty{ componentClassesCount<CAPACITY> };
-		for (std::size_t i{ 0U }; i != componentClassesCount<CAPACITY>; ++i)
-		{
-			if (std::holds_alternative<PooledComponent<Component, CAPACITY>>(pooledEntity_->components_[i]))
-			{
-				return pooledEntity_->components_[i];
-			}
-			else if (firstEmpty == componentClassesCount<CAPACITY> &&
-				std::holds_alternative<std::monostate>(pooledEntity_->components_[i]))
-			{
-				firstEmpty = i;
-			}
-		}
-
-		return pooledEntity_->components_[firstEmpty];
-	}
-
-	template <std::size_t CAPACITY>
-	template <ComponentConcept Component>
-	bool EntitiesManager<CAPACITY>::Entity::addComponent() noexcept
-	{
-		std::size_t firstEmpty{ componentClassesCount<CAPACITY> };
-		for (std::size_t i{ 0U }; i != componentClassesCount<CAPACITY>; ++i)
-		{
-			if (std::holds_alternative<PooledComponent<Component, CAPACITY>>(pooledEntity_->components_[i]))
-			{
-				return false;
-			}
-			else if (firstEmpty == componentClassesCount<CAPACITY> &&
-				std::holds_alternative<std::monostate>(pooledEntity_->components_[i]))
-			{
-				firstEmpty = i;
-			}
-		}
-
-		// if we've reached here than firstEmpty != componentClassesCount<CAPACITY>.
-		// proof by negation: assume firstEmpty == componentClassesCount<CAPACITY> then
-		// none of pooledEntity_->components_ is std::monostate, hence some variant 
-		// is already the component the client wished to add, so we've returned false
-
-		// notice Component is never polymorphic, therefore "typeid(Component)" 
-		// is resolved at compile time, without additional runtime overhead, see "Notes" at -
-		// https://en.cppreference.com/w/cpp/language/typeid
-
-		if (typeid(Component) == typeid(PhysicsComponent))
-		{
-			pooledEntity_->components_[firstEmpty] = std::move(entitiesManager_.physicsComponentsPool_.request());
-		}
-		else if (typeid(Component) == typeid(LifetimeComponent))
-		{
-			pooledEntity_->components_[firstEmpty] = std::move(entitiesManager_.lifetimeComponentsPool_.request());
-		}
-		else
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	template <std::size_t CAPACITY>
-	template <ComponentConcept Component>
-	bool EntitiesManager<CAPACITY>::Entity::removeComponent() noexcept
+	bool EntitiesManager<CAPACITY>::Entity::hasComponent(Component compo) const noexcept
 	{
 		bool res{ false };
-		for (PooledVariant<CAPACITY>& component : pooledEntity_->components_)
+		if (compo == Component::physics)
 		{
-			if (std::holds_alternative<PooledComponent<Component, CAPACITY>>(component))
-			{
-				component = std::move(std::monostate{});
-				res = true;
-				break;
-			}
+			res = pooledEntity_->physCompo_ != nullptr;
 		}
+		else if (compo == Component::lifetime)
+		{
+			res = pooledEntity_->lifetimeCompo_ != nullptr;
+		}
+
+		return res;
+	}
+
+	template <std::size_t CAPACITY>
+	PooledComponent<PhysicsComponent, CAPACITY>& EntitiesManager<CAPACITY>::Entity::getPhysicsComponent() noexcept
+	{
+		return pooledEntity_->physCompo_;
+	}
+
+	template <std::size_t CAPACITY>
+	PooledComponent<LifetimeComponent, CAPACITY>& EntitiesManager<CAPACITY>::Entity::getLifetimeComponent() noexcept
+	{
+		return pooledEntity_->lifetimeCompo_;
+	}
+
+	template <std::size_t CAPACITY>
+	bool EntitiesManager<CAPACITY>::Entity::addComponent(Component compo) noexcept
+	{
+		bool res{ false };
+
+		if (compo == Component::physics && pooledEntity_->physCompo_ == nullptr)
+		{
+			pooledEntity_->physCompo_ = std::move(entitiesManager_.physicsComponentsPool_.request());
+			res = true;
+		}
+		else if (compo == Component::lifetime && pooledEntity_->lifetimeCompo_ == nullptr)
+		{
+			pooledEntity_->lifetimeCompo_ = std::move(entitiesManager_.lifetimeComponentsPool_.request());
+			res = true;
+		}
+
+		return res;
+	}
+
+	template <std::size_t CAPACITY>
+	bool EntitiesManager<CAPACITY>::Entity::removeComponent(Component compo) noexcept
+	{
+		bool res{ false };
+
+		if (compo == Component::physics && pooledEntity_->physCompo_ != nullptr)
+		{
+			pooledEntity_->physCompo_.reset();
+			res = true;
+		}
+		else if (compo == Component::lifetime && pooledEntity_->lifetimeCompo_ != nullptr)
+		{
+			pooledEntity_->lifetimeCompo_.reset();
+			res = true;
+		}
+
 		return res;
 	}
 

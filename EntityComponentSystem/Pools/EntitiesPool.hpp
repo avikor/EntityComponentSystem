@@ -3,18 +3,10 @@
 
 #include "ComponentPool.hpp"
 
-#include <variant>
-
 
 namespace ecs
 {
     using EntityId = unsigned long;
-
-    template<std::size_t CAPACITY>
-    using PooledVariant =
-        std::variant<std::monostate,
-        PooledComponent<PhysicsComponent, CAPACITY>,
-        PooledComponent<LifetimeComponent, CAPACITY>>;
 
 
     enum class Group : std::uint32_t
@@ -31,16 +23,16 @@ namespace ecs
         count
     };
 
-    template<std::size_t CAPACITY>
-    static constexpr std::uint32_t componentClassesCount{ std::variant_size_v<PooledVariant<CAPACITY>> - 1U };
-
     static constexpr std::uint32_t groupsCount{ static_cast<std::underlying_type_t<Group>>(Group::count) - 1U };
 
     template<std::size_t CAPACITY>
     struct EntityBody
     {
         EntityId id_{ 0U };
-        std::array<PooledVariant<CAPACITY>, componentClassesCount<CAPACITY>> components_{};
+
+        PooledComponent<PhysicsComponent, CAPACITY> physCompo_{ nullptr };
+        PooledComponent<LifetimeComponent, CAPACITY> lifetimeCompo_{ nullptr };
+
         std::array<Group, groupsCount> groups_{};
     };
 
@@ -156,10 +148,8 @@ namespace ecs
 
         const std::size_t freedObjIdx{ static_cast<std::size_t>(entBody - poolStart_) };
 
-        for (PooledVariant<CAPACITY>& component : entBody->components_)
-        {
-            component = std::move(std::monostate{});
-        }
+        entBody->physCompo_.reset();
+        entBody->lifetimeCompo_.reset();
 
         --stackTop_;
         stack_[stackTop_] = freedObjIdx;
